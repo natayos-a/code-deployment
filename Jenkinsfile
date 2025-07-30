@@ -12,7 +12,7 @@ pipeline {
         
         // Hostname/IP ที่ Jenkins สามารถเข้าถึง SonarQube ได้จริง
         // เช่น: "http://192.168.1.100:9000" หรือ "http://sonarqube-service-name:9000" (ถ้าใช้ Docker Compose/Kubernetes)
-        SONAR_HOST_URL_JENKINS = "http://172.17.0.4:9000" // <-- ต้องแก้ไขตรงนี้!
+        SONAR_HOST_URL_JENKINS = "http://localhost:9000" // <-- ต้องแก้ไขตรงนี้!
         
         // Hostname/IP ที่ Jenkins สามารถเข้าถึง Nexus ได้จริง
         // เช่น: "your-nexus-ip-or-hostname:8082"
