@@ -16,18 +16,22 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/natayos-a/code-deployment.git' // เปลี่ยนเป็น Git Repository ของคุณ
+                script {
+                    git branch: 'main', url: 'https://github.com/natayos-a/code-deployment.git' // เปลี่ยนเป็น Git Repository ของคุณ
+                }
             }
         }
 
         stage('Code Quality Analysis') {
             steps {
-                withSonarQubeEnv('SonarQubeServer') { // 'SonarQubeServer' คือชื่อ SonarQube server ที่คอนฟิกใน Jenkins
+                script {
+                    withSonarQubeEnv('SonarQubeServer') { // 'SonarQubeServer' คือชื่อ SonarQube server ที่คอนฟิกใน Jenkins
                     sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner \
                        -Dsonar.projectKey=${APP_NAME} \
                        -Dsonar.sources=. \
                        -Dsonar.host.url=${SONAR_HOST_URL} \
                        -Dsonar.login=${SONAR_AUTH_TOKEN}"
+                    }
                 }
             }
             post {
@@ -45,17 +49,8 @@ pipeline {
             steps {
                 // ตัวอย่างสำหรับการ Build และ Test (ปรับเปลี่ยนตามภาษาและ Framework ของคุณ)
                 script {
-                    if (fileExists('pom.xml')) { // ตัวอย่างสำหรับ Java Maven
-                        sh "mvn clean install"
-                    } else if (fileExists('package.json')) { // ตัวอย่างสำหรับ Node.js
-                        sh "npm install"
-                        sh "npm test"
-                    } else if (fileExists('Dockerfile')) {
-                        // ถ้าแอปพลิเคชันเป็น Dockerized โดยตรง
-                        sh "docker build -t ${APP_NAME}:${env.BUILD_NUMBER} ."
-                    } else {
-                        error "Unsupported project type. Please add build steps."
-                    }
+                    sh "npm install"
+                    sh "npm test"
                 }
                 // ถ้ามีการสร้าง JAR/WAR/Binary หรือ artifact อื่นๆ ในขั้นตอนนี้
                 // archiveArtifacts artifacts: 'target/*.jar', fingerprint: true // ตัวอย่าง
