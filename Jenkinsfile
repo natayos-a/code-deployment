@@ -25,12 +25,8 @@ pipeline {
         stage('Code Quality Analysis') {
             steps {
                 script {
-                    withSonarQubeEnv('SonarQubeServer') { // 'SonarQubeServer' คือชื่อ SonarQube server ที่คอนฟิกใน Jenkins
-                    sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner \
-                       -Dsonar.projectKey=${APP_NAME} \
-                       -Dsonar.sources=. \
-                       -Dsonar.host.url=${SONAR_HOST_URL} \
-                       -Dsonar.login=${SONAR_AUTH_TOKEN}"
+                    withSonarQubeEnv(installationName: 'SonarQubeServer', credentialsId: 'Sonar') { // 'SonarQubeServer' คือชื่อ SonarQube server ที่คอนฟิกใน Jenkins
+                    sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner"
                     }
                 }
             }
