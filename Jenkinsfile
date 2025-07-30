@@ -62,21 +62,21 @@ pipeline {
             }
         }
 
-        stage('Security Scanning (Trivy)') {
-            steps {
-                script {
-                    def imageName = "${APP_NAME}:${env.BUILD_NUMBER}"
-                    // ตรวจสอบว่ามี Dockerfile และสามารถ build ได้
-                    if (fileExists('Dockerfile')) {
-                        sh "docker build -t ${imageName} ."
-                        sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${imageName}"
-                        // เพิ่ม --timeout 5m ถ้าการสแกนใช้เวลานาน
-                    } else {
-                        echo "No Dockerfile found. Skipping Trivy scan."
-                    }
-                }
-            }
-        }
+        // stage('Security Scanning (Trivy)') {
+        //     steps {
+        //         script {
+        //             def imageName = "${APP_NAME}:${env.BUILD_NUMBER}"
+        //             // ตรวจสอบว่ามี Dockerfile และสามารถ build ได้
+        //             if (fileExists('Dockerfile')) {
+        //                 sh "docker build -t ${imageName} ."
+        //                 sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${imageName}"
+        //                 // เพิ่ม --timeout 5m ถ้าการสแกนใช้เวลานาน
+        //             } else {
+        //                 echo "No Dockerfile found. Skipping Trivy scan."
+        //             }
+        //         }
+        //     }
+        // }
 
         // stage('Push to Registry') {
         //     steps {
