@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // กำหนดตัวแปรสภาพแวดล้อม
-        SONAR_SCANNER_HOME = tool 'SonarScanner' // ต้องคอนฟิก SonarQube Scanner ใน Jenkins Global Tool Configuration
+        SONAR_SCANNER_HOME = tool 'DevopsTrain-tool' // ต้องคอนฟิก SonarQube Scanner ใน Jenkins Global Tool Configuration
         NEXUS_DOCKER_REGISTRY = "localhost::8082" // เปลี่ยนเป็น IP/Hostname ของ Nexus Registry
         NEXUS_REPO_NAME = "code-deployment" // ชื่อ Repository ใน Nexus สำหรับ Docker images
         APP_NAME = "my-app" // ชื่อแอปพลิเคชัน
@@ -25,7 +25,7 @@ pipeline {
                        -Dsonar.projectKey=${APP_NAME} \
                        -Dsonar.sources=. \
                        -Dsonar.host.url=${SONAR_HOST_URL} \
-                       -Dsonar.login=${SONAR_AUTH_TOKEN}" // เปลี่ยน SONAR_HOST_URL, SONAR_AUTH_TOKEN เป็นตัวแปร Jenkins Credential
+                       -Dsonar.login=${SONAR_AUTH_TOKEN}"
                 }
             }
             post {
