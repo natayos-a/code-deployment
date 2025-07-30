@@ -5,7 +5,7 @@ pipeline {
         // กำหนดตัวแปรสภาพแวดล้อม
         SONAR_SCANNER_HOME = tool 'SonarScanner' // ต้องคอนฟิก SonarQube Scanner ใน Jenkins Global Tool Configuration
         NEXUS_DOCKER_REGISTRY = "localhost::8082" // เปลี่ยนเป็น IP/Hostname ของ Nexus Registry
-        NEXUS_REPO_NAME = "myapp" // ชื่อ Repository ใน Nexus สำหรับ Docker images
+        NEXUS_REPO_NAME = "code-deployment" // ชื่อ Repository ใน Nexus สำหรับ Docker images
         APP_NAME = "my-app" // ชื่อแอปพลิเคชัน
         // GIT_OPS_REPO = "https://github.com/your-org/your-gitops-repo.git" // URL ของ GitOps Repository
         // GIT_OPS_BRANCH = "main" // Branch ของ GitOps Repository
@@ -14,7 +14,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-org/your-app-repo.git' // เปลี่ยนเป็น Git Repository ของคุณ
+                git branch: 'main', url: 'https://github.com/natayos-a/code-deployment.git' // เปลี่ยนเป็น Git Repository ของคุณ
             }
         }
 
@@ -76,55 +76,55 @@ pipeline {
             }
         }
 
-        stage('Push to Registry') {
-            steps {
-                script {
-                    def fullImageName = "${NEXUS_DOCKER_REGISTRY}/${NEXUS_REPO_NAME}/${APP_NAME}:${env.BUILD_NUMBER}"
-                    // ตรวจสอบว่ามี Dockerfile และมีการ build image แล้ว
-                    if (fileExists('Dockerfile')) {
-                        // Login to Nexus Docker Registry
-                        withCredentials([usernamePassword(credentialsId: 'nexus-docker-creds', passwordVariable: 'NEXUS_PASSWORD', usernameVariable: 'NEXUS_USERNAME')]) {
-                            sh "echo ${NEXUS_PASSWORD} | docker login ${NEXUS_DOCKER_REGISTRY} --username ${NEXUS_USERNAME} --password-stdin"
-                        }
-                        // Tag image with Nexus registry name
-                        sh "docker tag ${APP_NAME}:${env.BUILD_NUMBER} ${fullImageName}"
-                        // Push to Nexus
-                        sh "docker push ${fullImageName}"
-                        echo "Docker image pushed to Nexus Registry: ${fullImageName}"
-                    } else {
-                        echo "No Dockerfile found or image not built. Skipping Docker push."
-                    }
-                }
-            }
-        }
+        // stage('Push to Registry') {
+        //     steps {
+        //         script {
+        //             def fullImageName = "${NEXUS_DOCKER_REGISTRY}/${NEXUS_REPO_NAME}/${APP_NAME}:${env.BUILD_NUMBER}"
+        //             // ตรวจสอบว่ามี Dockerfile และมีการ build image แล้ว
+        //             if (fileExists('Dockerfile')) {
+        //                 // Login to Nexus Docker Registry
+        //                 withCredentials([usernamePassword(credentialsId: 'nexus-docker-creds', passwordVariable: 'NEXUS_PASSWORD', usernameVariable: 'NEXUS_USERNAME')]) {
+        //                     sh "echo ${NEXUS_PASSWORD} | docker login ${NEXUS_DOCKER_REGISTRY} --username ${NEXUS_USERNAME} --password-stdin"
+        //                 }
+        //                 // Tag image with Nexus registry name
+        //                 sh "docker tag ${APP_NAME}:${env.BUILD_NUMBER} ${fullImageName}"
+        //                 // Push to Nexus
+        //                 sh "docker push ${fullImageName}"
+        //                 echo "Docker image pushed to Nexus Registry: ${fullImageName}"
+        //             } else {
+        //                 echo "No Dockerfile found or image not built. Skipping Docker push."
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('GitOps Update') {
-            steps {
-                script {
-                    // 1. Clone the GitOps Repository
-                    sh "git config --global user.email 'jenkins@example.com'"
-                    sh "git config --global user.name 'Jenkins CI'"
-                    sh "git clone ${GIT_OPS_REPO} gitops-repo"
-                    dir('gitops-repo') {
-                        sh "git checkout ${GIT_OPS_BRANCH}"
+        // stage('GitOps Update') {
+        //     steps {
+        //         script {
+        //             // 1. Clone the GitOps Repository
+        //             sh "git config --global user.email 'jenkins@example.com'"
+        //             sh "git config --global user.name 'Jenkins CI'"
+        //             sh "git clone ${GIT_OPS_REPO} gitops-repo"
+        //             dir('gitops-repo') {
+        //                 sh "git checkout ${GIT_OPS_BRANCH}"
 
-                        // 2. Update values.yaml (ตัวอย่าง: ใช้ yq หรือ sed)
-                        def newImageTag = "${NEXUS_DOCKER_REGISTRY}/${NEXUS_REPO_NAME}/${APP_NAME}:${env.BUILD_NUMBER}"
-                        sh "sed -i 's|image:.*|image: ${newImageTag}|g' ${VALUES_YAML_PATH}" // ต้องระมัดระวัง regex ให้ถูกต้อง
-                        // หรือใช้ yq (ต้องติดตั้ง yq ใน Jenkins agent)
-                        // sh "yq e '.image = \"${newImageTag}\"' -i ${VALUES_YAML_PATH}"
+        //                 // 2. Update values.yaml (ตัวอย่าง: ใช้ yq หรือ sed)
+        //                 def newImageTag = "${NEXUS_DOCKER_REGISTRY}/${NEXUS_REPO_NAME}/${APP_NAME}:${env.BUILD_NUMBER}"
+        //                 sh "sed -i 's|image:.*|image: ${newImageTag}|g' ${VALUES_YAML_PATH}" // ต้องระมัดระวัง regex ให้ถูกต้อง
+        //                 // หรือใช้ yq (ต้องติดตั้ง yq ใน Jenkins agent)
+        //                 // sh "yq e '.image = \"${newImageTag}\"' -i ${VALUES_YAML_PATH}"
 
-                        // 3. Commit and Push changes
-                        sh "git add ${VALUES_YAML_PATH}"
-                        sh "git commit -m 'Update ${APP_NAME} image to ${newImageTag} by Jenkins CI [skip ci]'" // [skip ci] เพื่อไม่ให้ GitOps repo trigger Jenkins ซ้ำ
-                        withCredentials([sshUserPrivateKey(credentialsId: 'gitops-ssh-key', keyFileVariable: 'SSH_KEY_FILE')]) {
-                            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY_FILE} -o StrictHostKeyChecking=no' git push origin ${GIT_OPS_BRANCH}"
-                        }
-                        echo "GitOps repository updated with new image tag: ${newImageTag}"
-                    }
-                }
-            }
-        }
+        //                 // 3. Commit and Push changes
+        //                 sh "git add ${VALUES_YAML_PATH}"
+        //                 sh "git commit -m 'Update ${APP_NAME} image to ${newImageTag} by Jenkins CI [skip ci]'" // [skip ci] เพื่อไม่ให้ GitOps repo trigger Jenkins ซ้ำ
+        //                 withCredentials([sshUserPrivateKey(credentialsId: 'gitops-ssh-key', keyFileVariable: 'SSH_KEY_FILE')]) {
+        //                     sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY_FILE} -o StrictHostKeyChecking=no' git push origin ${GIT_OPS_BRANCH}"
+        //                 }
+        //                 echo "GitOps repository updated with new image tag: ${newImageTag}"
+        //             }
+        //         }
+        //     }
+        // }
     }
     post {
         always {
