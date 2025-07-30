@@ -4,6 +4,8 @@ pipeline {
     environment {
         // กำหนดตัวแปรสภาพแวดล้อม
         SONAR_SCANNER_HOME = tool 'DevopsTrain-tool' // ต้องคอนฟิก SonarQube Scanner ใน Jenkins Global Tool Configuration
+        SONAR_HOST_URL = "localhost:9000"
+        SONAR_AUTH_TOKEN = "Sonar"
         NEXUS_DOCKER_REGISTRY = "localhost:8082" // เปลี่ยนเป็น IP/Hostname ของ Nexus Registry
         NEXUS_REPO_NAME = "code-deployment" // ชื่อ Repository ใน Nexus สำหรับ Docker images
         APP_NAME = "my-app" // ชื่อแอปพลิเคชัน
@@ -20,8 +22,12 @@ pipeline {
 
         stage('Code Quality Analysis') {
             steps {
-                withSonarQubeEnv(credentialsId: 'Sonar', installationName: 'SonarQubeServer') { // 'SonarQubeServer' คือชื่อ SonarQube server ที่คอนฟิกใน Jenkins
-                    sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner"
+                withSonarQubeEnv('SonarQubeServer') { // 'SonarQubeServer' คือชื่อ SonarQube server ที่คอนฟิกใน Jenkins
+                    sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner \
+                       -Dsonar.projectKey=${APP_NAME} \
+                       -Dsonar.sources=. \
+                       -Dsonar.host.url=${SONAR_HOST_URL} \
+                       -Dsonar.login=${SONAR_AUTH_TOKEN}"
                 }
             }
             post {
@@ -56,21 +62,21 @@ pipeline {
             }
         }
 
-        // stage('Security Scanning (Trivy)') {
-        //     steps {
-        //         script {
-        //             def imageName = "${APP_NAME}:${env.BUILD_NUMBER}"
-        //             // ตรวจสอบว่ามี Dockerfile และสามารถ build ได้
-        //             if (fileExists('Dockerfile')) {
-        //                 sh "docker build -t ${imageName} ."
-        //                 sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${imageName}"
-        //                 // เพิ่ม --timeout 5m ถ้าการสแกนใช้เวลานาน
-        //             } else {
-        //                 echo "No Dockerfile found. Skipping Trivy scan."
-        //             }
-        //         }
-        //     }
-        // }
+        stage('Security Scanning (Trivy)') {
+            steps {
+                script {
+                    def imageName = "${APP_NAME}:${env.BUILD_NUMBER}"
+                    // ตรวจสอบว่ามี Dockerfile และสามารถ build ได้
+                    if (fileExists('Dockerfile')) {
+                        sh "docker build -t ${imageName} ."
+                        sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${imageName}"
+                        // เพิ่ม --timeout 5m ถ้าการสแกนใช้เวลานาน
+                    } else {
+                        echo "No Dockerfile found. Skipping Trivy scan."
+                    }
+                }
+            }
+        }
 
         // stage('Push to Registry') {
         //     steps {
