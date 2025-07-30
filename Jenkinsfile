@@ -18,6 +18,7 @@ pipeline {
             steps {
                 script {
                     git branch: 'main', url: 'https://github.com/natayos-a/code-deployment.git' // เปลี่ยนเป็น Git Repository ของคุณ
+                    echo "Checking out code....."
                 }
             }
         }
