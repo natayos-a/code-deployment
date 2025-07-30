@@ -4,8 +4,6 @@ pipeline {
     environment {
         // กำหนดตัวแปรสภาพแวดล้อม
         SONAR_SCANNER_HOME = tool 'DevopsTrain-tool' // ต้องคอนฟิก SonarQube Scanner ใน Jenkins Global Tool Configuration
-        SONAR_HOST_URL = "localhost:9000"
-        SONAR_AUTH_TOKEN = "sqp_c898a94b16375a53487cc1f6f9773b640ed463f3"
         NEXUS_DOCKER_REGISTRY = "localhost:8082" // เปลี่ยนเป็น IP/Hostname ของ Nexus Registry
         NEXUS_REPO_NAME = "code-deployment" // ชื่อ Repository ใน Nexus สำหรับ Docker images
         APP_NAME = "my-app" // ชื่อแอปพลิเคชัน
@@ -22,12 +20,8 @@ pipeline {
 
         stage('Code Quality Analysis') {
             steps {
-                withSonarQubeEnv('SonarQubeServer') { // 'SonarQubeServer' คือชื่อ SonarQube server ที่คอนฟิกใน Jenkins
-                    sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner \
-                       -Dsonar.projectKey=${APP_NAME} \
-                       -Dsonar.sources=. \
-                       -Dsonar.host.url=${SONAR_HOST_URL} \
-                       -Dsonar.login=${SONAR_AUTH_TOKEN}"
+                withSonarQubeEnv(credentialsId: 'Sonar', installationName: 'SonarQubeServer') { // 'SonarQubeServer' คือชื่อ SonarQube server ที่คอนฟิกใน Jenkins
+                    sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner"
                 }
             }
             post {
