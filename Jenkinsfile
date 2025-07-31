@@ -45,8 +45,8 @@ pipeline {
                 // withSonarQubeEnv จะทำให้ Jenkins กำหนดค่า environment variables
                 // ที่จำเป็นสำหรับ SonarQube Scanner ให้โดยอัตโนมัติ
                 // 'MySonarQubeServer' ต้องตรงกับชื่อที่คุณตั้งใน Configure System
-                withSonarQubeEnv('SonarCICD') {
-                    sh 'sonar-scanner -Dsonar.projectKey=my_code_deployment_project -Dsonar.sources=.'
+                withSonarQubeEnv('SonarServer') {
+                    sh 'sonar-scanner -Dsonar.projectKey=DevopsTrain -Dsonar.sources=.'
                 }
             }
         }
