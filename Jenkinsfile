@@ -46,12 +46,7 @@ pipeline {
                 // ที่จำเป็นสำหรับ SonarQube Scanner ให้โดยอัตโนมัติ
                 // 'MySonarQubeServer' ต้องตรงกับชื่อที่คุณตั้งใน Configure System
                 withSonarQubeEnv('SonarCICD') {
-                    // คำสั่งสำหรับรัน SonarQube Scanner
-                    // โครงสร้างคำสั่งจะแตกต่างกันเล็กน้อยขึ้นอยู่กับประเภทโปรเจกต์
-                    // สำหรับ JS/TS/Node.js โปรเจกต์ที่ไม่มี build tool เฉพาะ:
-                    sh 'sonar-scanner \
-                      -Dsonar.projectKey=my_code_deployment_project \
-                      -Dsonar.sources=.' // . หมายถึงสแกนโฟลเดอร์ปัจจุบันทั้งหมด
+                    sh 'sonar-scanner -Dsonar.projectKey=my_code_deployment_project -Dsonar.sources=.'
                 }
             }
         }
