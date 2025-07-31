@@ -5,18 +5,6 @@ pipeline {
         nodejs 'NodeJS 18'
     }
 
-    environment {
-        
-        SONAR_HOST_URL_JENKINS = "http://localhost:9000" // <-- ต้องแก้ไขตรงนี้!
-        APP_NAME = "my-app" // ชื่อแอปพลิเคชัน
-        
-        // SonarQube Project Parameters (แนะนำให้กำหนดใน Jenkinsfile หรือใน sonar-project.properties)
-        SONAR_PROJECT_KEY = "DevopsTrain" // Unique key สำหรับ SonarQube project
-        SONAR_PROJECT_NAME = "${APP_NAME} (${env.BRANCH_NAME})" // ชื่อที่แสดงใน SonarQube
-        SONAR_SOURCES = "." // Path ของ Source code ที่ต้องการ Scan ('.' คือ current directory)
-        SONAR_BINARIES = "build" // Path ของไฟล์ที่ Compile แล้ว (สำหรับ JS/TS คือ build folder)
-    }
-
     stages {
         stage('Checkout Code') {
             steps {
@@ -50,6 +38,7 @@ pipeline {
                 }
             }
         }
+
         stage('Quality Gate Check') {
             steps {
                 // รอให้ SonarQube วิเคราะห์เสร็จและตรวจสอบ Quality Gate
@@ -60,55 +49,36 @@ pipeline {
             }
         }
 
+        stage('Build Docker Image') {
+            steps {
+                echo "Building Docker Image: ${DOCKER_IMAGE_NAME}..."
+                // คำสั่ง Docker Build: ใช้ Dockerfile ใน Root ของโปรเจกต์
+                sh "docker build -t ${DOCKER_IMAGE_NAME} ."
+                echo "Docker Image ${DOCKER_IMAGE_NAME} built successfully."
+            }
+        }
+
+        stage('Trivy Scan') {
+            steps {
+                echo "Running Trivy vulnerability scan on ${DOCKER_IMAGE_NAME}..."
+                script {
+                    try {
+                        // สแกน Docker Image; หากพบช่องโหว่ระดับ HIGH หรือ CRITICAL จะทำให้ Stage ล้มเหลว
+                        sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_IMAGE_NAME}"
+                        echo "Trivy scan completed without HIGH or CRITICAL vulnerabilities."
+                    } catch (err) {
+                        echo "Trivy scan found vulnerabilities with HIGH or CRITICAL severity. Aborting pipeline."
+                        error "Trivy scan failed due to high/critical vulnerabilities." // ทำให้ Pipeline ล้มเหลว
+                    }
+                }
+            }
+        }
+
         stage('Deploy') {
             steps {
                 echo "Deploy app !!"
             }
         }
-
-    //     stage('Code Quality Analysis') {
-    //         steps {
-    //             script {
-    //                 echo "Starting SonarQube analysis..."
-    //                 // 'SonarQubeServer' คือชื่อ SonarQube server ที่คอนฟิกใน Jenkins (Manage Jenkins -> Configure System)
-    //                 // ไม่ต้องระบุ credentialsId: 'Sonar' ที่นี่ เพราะ credential ควรผูกกับ server ใน Jenkins แล้ว
-    //                 withSonarQubeEnv(installationName: 'SonarCICD') { // <--- **ใช้ชื่อ SonarQube Server ที่คุณตั้งค่าไว้ใน Jenkins**
-    //                     // 'DevopsTrain-tool' คือชื่อ SonarQube Scanner ที่คอนฟิกใน Jenkins Global Tool Configuration
-    //                     def scannerHome = tool 'DevopsTrain-tool' // <--- **ใช้ชื่อ SonarScanner Tool ที่คุณตั้งค่าไว้ใน Jenkins**
-
-    //                     // รัน SonarScanner พร้อมพารามิเตอร์ที่จำเป็น
-    //                     // หากมีไฟล์ sonar-project.properties อยู่ใน root ของ project ก็ไม่ต้องระบุพารามิเตอร์เหล่านี้ซ้ำ
-    //                     sh "${scannerHome}/bin/sonar-scanner " +
-    //                        "-Dsonar.projectKey=${SONAR_PROJECT_KEY} " +
-    //                        "-Dsonar.projectName=${SONAR_PROJECT_NAME} " +
-    //                        "-Dsonar.sources=${SONAR_SOURCES} " +
-    //                        "-Dsonar.binaries=${SONAR_BINARIES} " +
-    //                        "-Dsonar.host.url=${SONAR_HOST_URL_JENKINS} " + // ส่ง URL ไปให้ SonarScanner ด้วย
-    //                        "-Dsonar.javascript.lcov.reportPaths=coverage/lcov.info " + // สำหรับ coverage report ของ JS/TS
-    //                        "-Dsonar.tests=src " + // Path to your test files (e.g., 'src' folder)
-    //                        "-Dsonar.test.inclusions=**/*.test.{js,jsx,ts,tsx},**/*.spec.{js,jsx,ts,tsx} " +
-    //                        "-Dsonar.exclusions=node_modules/**,build/** " + // ไฟล์/โฟลเดอร์ที่ไม่ต้องการ Scan
-    //                        "-Dsonar.typescript.tsconfigPath=tsconfig.json" // สำหรับ TypeScript projects
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     // Stage 4: Wait for Quality Gate (สำคัญมาก!)
-    //     // Pipeline จะหยุดรอที่นี่จนกว่า SonarQube จะวิเคราะห์เสร็จและส่งผล Quality Gate กลับมา
-    //     stage('Quality Gate Check') {
-    //         steps {
-    //             echo "Waiting for SonarQube Quality Gate status..."
-    //             timeout(time: 15, unit: 'MINUTES') { // กำหนด Timeout เผื่อ SonarQube ใช้เวลานาน
-    //                 def qg = waitForQualityGate() // ใช้ plugin SonarQube Scanner for Jenkins
-    //                 if (qg.status != 'OK') {
-    //                     error "SonarQube Quality Gate failed with status: ${qg.status}. Stopping pipeline."
-    //                 } else {
-    //                     echo "SonarQube Quality Gate passed: ${qg.status}"
-    //                 }
-    //             }
-    //         }
-    //     }
     }
     
     post {
