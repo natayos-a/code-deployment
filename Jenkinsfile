@@ -5,13 +5,16 @@ pipeline {
         nodejs 'NodeJS 18'
     }
 
+    environment {
+        APP_NAME = "my-app"
+        IMAGE_VERSION = "${env.BUILD_NUMBER}"
+        DOCKER_IMAGE_NAME = "${APP_NAME}:${IMAGE_VERSION}"
+    }
+
     stages {
         stage('Checkout Code') {
             steps {
                 script {
-                    // ถ้า Jenkinsfile ถูกดึงมาจาก SCM ด้วย "Pipeline script from SCM"
-                    // Jenkins จะทำการ Checkout Repo หลักให้อยู่แล้ว
-                    // คำสั่ง 'git' นี้อาจไม่จำเป็น เว้นแต่คุณต้องการ checkout sub-repo อื่นๆ
                     echo "Checking out code....."
                     git branch: 'main', url: 'https://github.com/natayos-a/code-deployment.git'
                 }
@@ -30,9 +33,6 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                // withSonarQubeEnv จะทำให้ Jenkins กำหนดค่า environment variables
-                // ที่จำเป็นสำหรับ SonarQube Scanner ให้โดยอัตโนมัติ
-                // 'MySonarQubeServer' ต้องตรงกับชื่อที่คุณตั้งใน Configure System
                 withSonarQubeEnv('SonarServer') {
                     sh 'sonar-scanner -Dsonar.projectKey=cicd -Dsonar.sources=.'
                 }
@@ -41,8 +41,6 @@ pipeline {
 
         stage('Quality Gate Check') {
             steps {
-                // รอให้ SonarQube วิเคราะห์เสร็จและตรวจสอบ Quality Gate
-                // 'MySonarQubeServer' ต้องตรงกับชื่อที่คุณตั้งใน Configure System
                 timeout(time: 5, unit: 'MINUTES') { // กำหนด timeout เผื่อกรณี SonarQube ช้า
                     waitForQualityGate abortPipeline: true
                 }
@@ -62,9 +60,10 @@ pipeline {
             steps {
                 echo "Running Trivy vulnerability scan on ${DOCKER_IMAGE_NAME}..."
                 script {
+                    def currentImageName = env.DOCKER_IMAGE_NAME
                     try {
                         // สแกน Docker Image; หากพบช่องโหว่ระดับ HIGH หรือ CRITICAL จะทำให้ Stage ล้มเหลว
-                        sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_IMAGE_NAME}"
+                        sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${currentImageName}"
                         echo "Trivy scan completed without HIGH or CRITICAL vulnerabilities."
                     } catch (err) {
                         echo "Trivy scan found vulnerabilities with HIGH or CRITICAL severity. Aborting pipeline."
