@@ -46,7 +46,7 @@ pipeline {
                 // ที่จำเป็นสำหรับ SonarQube Scanner ให้โดยอัตโนมัติ
                 // 'MySonarQubeServer' ต้องตรงกับชื่อที่คุณตั้งใน Configure System
                 withSonarQubeEnv('SonarServer') {
-                    sh 'sonar-scanner -Dsonar.projectKey=cicd -Dsonar.sources=.'
+                    sh 'SonarScanner -Dsonar.projectKey=cicd -Dsonar.sources=.'
                 }
             }
         }
