@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'NodeJS 16.14'
+    }
+
     environment {
         
         SONAR_HOST_URL_JENKINS = "http://localhost:9000" // <-- ต้องแก้ไขตรงนี้!
@@ -21,7 +25,7 @@ pipeline {
                     // Jenkins จะทำการ Checkout Repo หลักให้อยู่แล้ว
                     // คำสั่ง 'git' นี้อาจไม่จำเป็น เว้นแต่คุณต้องการ checkout sub-repo อื่นๆ
                     echo "Checking out code....."
-                    git branch: 'main', credentialsId: 'Github-access-natayos', url: 'https://github.com/natayos-a/code-deployment.git' // เปลี่ยนเป็น Git Repository ของคุณ
+                    git branch: 'main', url: 'https://github.com/natayos-a/code-deployment.git'
                 }
             }
         }
