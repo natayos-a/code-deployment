@@ -40,6 +40,31 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                // withSonarQubeEnv จะทำให้ Jenkins กำหนดค่า environment variables
+                // ที่จำเป็นสำหรับ SonarQube Scanner ให้โดยอัตโนมัติ
+                // 'MySonarQubeServer' ต้องตรงกับชื่อที่คุณตั้งใน Configure System
+                withSonarQubeEnv('SonarCICD') {
+                    // คำสั่งสำหรับรัน SonarQube Scanner
+                    // โครงสร้างคำสั่งจะแตกต่างกันเล็กน้อยขึ้นอยู่กับประเภทโปรเจกต์
+                    // สำหรับ JS/TS/Node.js โปรเจกต์ที่ไม่มี build tool เฉพาะ:
+                    sh 'sonar-scanner \
+                      -Dsonar.projectKey=my_code_deployment_project \
+                      -Dsonar.sources=.' // . หมายถึงสแกนโฟลเดอร์ปัจจุบันทั้งหมด
+                }
+            }
+        }
+        stage('Quality Gate Check') {
+            steps {
+                // รอให้ SonarQube วิเคราะห์เสร็จและตรวจสอบ Quality Gate
+                // 'MySonarQubeServer' ต้องตรงกับชื่อที่คุณตั้งใน Configure System
+                timeout(time: 5, unit: 'MINUTES') { // กำหนด timeout เผื่อกรณี SonarQube ช้า
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
         stage('Deploy') {
             steps {
                 echo "Deploy app !!"
