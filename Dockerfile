@@ -36,6 +36,11 @@ RUN apt-get update && \
     apt-get update && \
     apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
+RUN mkdir -p /etc/docker && \
+    echo '{ "insecure-registries": ["nexus:8082"] }' | tee /etc/docker/daemon.json && \
+    systemctl daemon-reload || true && \
+    systemctl restart docker || true
+
 # เพิ่ม Jenkins user เข้าไปใน docker group
 # เพื่อให้ Jenkins user สามารถรันคำสั่ง Docker ได้
 RUN usermod -aG docker jenkins

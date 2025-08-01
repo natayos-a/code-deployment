@@ -52,9 +52,12 @@ services:
 
   nexus:
     container_name: nexus
-    image: sonatype/nexus3
+    image: sonatype/nexus3:latest
+    hostname: nexus
     ports:
       - "8081:8081"
+      - "8082:8082"
+      - "8083:8083"
     volumes:
       - nexus_data:/nexus-data
     environment:
