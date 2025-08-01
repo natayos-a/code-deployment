@@ -11,7 +11,7 @@ pipeline {
         DOCKER_IMAGE_NAME = "${APP_NAME}:${IMAGE_VERSION}"
         NEXUS_REGISTRY = "172.24.112.1:8082"
         NEXUS_DOCKER_REPO = "myapp-docker" // ตั้งชื่อตาม Repository ที่คุณสร้างใน Nexus
-        FULL_DOCKER_IMAGE_PATH = "${NEXUS_REGISTRY}/${DOCKER_IMAGE_NAME}"
+        FULL_DOCKER_IMAGE_PATH = "${NEXUS_REGISTRY}/${APP_NAME}:${IMAGE_VERSION}"
     }
 
     stages {
@@ -54,7 +54,7 @@ pipeline {
             steps {
                 echo "Building Docker Image: ${DOCKER_IMAGE_NAME}..."
                 // คำสั่ง Docker Build: ใช้ Dockerfile ใน Root ของโปรเจกต์
-                sh "docker build -t ${DOCKER_IMAGE_NAME} ."
+                sh "docker build -t ${FULL_DOCKER_IMAGE_PATH} ." 
                 echo "Docker Image ${DOCKER_IMAGE_NAME} built successfully."
             }
         }
