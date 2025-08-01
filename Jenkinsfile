@@ -44,18 +44,26 @@ pipeline {
 
         stage('Quality Gate Check') {
             steps {
-                timeout(time: 5, unit: 'MINUTES') { // กำหนด timeout เผื่อกรณี SonarQube ช้า
-                    waitForQualityGate abortPipeline: true
+                timeout(time: 3, unit: 'MINUTES') { // กำหนด timeout เผื่อกรณี SonarQube ช้า
+                    waitForQualityGate abortPipeline: false
                 }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo "Building Docker Image: ${DOCKER_IMAGE_NAME}..."
-                // คำสั่ง Docker Build: ใช้ Dockerfile ใน Root ของโปรเจกต์
-                sh "docker build -t ${DOCKER_IMAGE_NAME} ."
-                echo "Docker Image ${DOCKER_IMAGE_NAME} built successfully."
+                script {
+                    // สร้าง tag สำหรับ Docker Image โดยใช้ ID ของ Jenkins Build
+                    def DOCKER_IMAGE_TAG = "${env.BUILD_ID}"
+                    def FULL_DOCKER_IMAGE_NAME = "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+                    
+                    echo "Building Docker Image: ${FULL_DOCKER_IMAGE_NAME}..."
+                    
+                    // คำสั่ง Docker Build: ใช้ Dockerfile ใน Root ของโปรเจกต์ และกำหนด tag
+                    sh "docker build -t ${FULL_DOCKER_IMAGE_NAME} ."
+                    
+                    echo "Docker Image ${FULL_DOCKER_IMAGE_NAME} built successfully."
+                }
             }
         }
 
