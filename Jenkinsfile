@@ -9,6 +9,9 @@ pipeline {
         APP_NAME = "my-app"
         IMAGE_VERSION = "${env.BUILD_NUMBER}"
         DOCKER_IMAGE_NAME = "${APP_NAME}:${IMAGE_VERSION}"
+        NEXUS_REGISTRY = "nexus:8082"
+        FULL_DOCKER_IMAGE_PATH = "${NEXUS_REGISTRY}/${APP_NAME}:${IMAGE_VERSION}"
+    }
     }
 
     stages {
@@ -57,19 +60,28 @@ pipeline {
         }
 
         stage('Trivy Scan') {
-    steps {
-        echo "Running Trivy vulnerability scan on ${DOCKER_IMAGE_NAME}..."
-        script {
-            def currentImageName = env.DOCKER_IMAGE_NAME
-            sh "trivy image --severity HIGH,CRITICAL ${currentImageName}"
-            echo "Trivy scan completed. Check logs for any HIGH or CRITICAL vulnerabilities."
+            steps {
+                echo "Running Trivy vulnerability scan on ${DOCKER_IMAGE_NAME}..."
+                script {
+                    def currentImageName = env.DOCKER_IMAGE_NAME
+                    sh "trivy image --severity HIGH,CRITICAL ${currentImageName}"
+                    echo "Trivy scan completed. Check logs for any HIGH or CRITICAL vulnerabilities."
+                }
+            }
         }
-    }
-}
 
         stage('Deploy') {
             steps {
                 echo "Deploy app !!"
+                // ขั้นตอนที่ 5: Push to Registry
+                withCredentials([usernamePassword(credentialsId: 'nexus-registry', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
+                    echo "Logging into Nexus Registry: ${NEXUS_REGISTRY}..."
+                    sh "echo ${NEXUS_PASSWORD} | docker login -u ${NEXUS_USERNAME} --password-stdin ${NEXUS_REGISTRY}"
+                    echo "Pushing Docker Image: ${FULL_DOCKER_IMAGE_PATH} to Nexus Registry..."
+                    sh "docker push ${FULL_DOCKER_IMAGE_PATH}"
+                    echo "Docker Image pushed successfully to Nexus Registry."
+                    sh "docker logout ${NEXUS_REGISTRY}"
+                }
             }
         }
     }
