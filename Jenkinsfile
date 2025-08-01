@@ -13,7 +13,6 @@ pipeline {
         NEXUS_DOCKER_REPO = "myapp-docker" // ตั้งชื่อตาม Repository ที่คุณสร้างใน Nexus
         FULL_DOCKER_IMAGE_PATH = "${NEXUS_REGISTRY}/${NEXUS_DOCKER_REPO}/${APP_NAME}:${IMAGE_VERSION}"
     }
-    }
 
     stages {
         stage('Checkout Code') {
