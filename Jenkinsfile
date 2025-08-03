@@ -8,10 +8,10 @@ pipeline {
     environment {
         APP_NAME = "my-app"
         IMAGE_VERSION = "${env.BUILD_NUMBER}"
-        DOCKER_IMAGE_NAME = "${APP_NAME}"
+        DOCKER_IMAGE_NAME = "${APP_NAME}:${IMAGE_VERSION}"
         NEXUS_REGISTRY = "172.24.112.1:8082"
         NEXUS_DOCKER_REPO = "myapp-docker" // ตั้งชื่อตาม Repository ที่คุณสร้างใน Nexus
-        FULL_DOCKER_IMAGE_PATH = "${NEXUS_REGISTRY}/${DOCKER_IMAGE_NAME}:lastest"
+        FULL_DOCKER_IMAGE_PATH = "${NEXUS_REGISTRY}/${DOCKER_IMAGE_NAME}"
     }
 
     stages {
@@ -54,8 +54,8 @@ pipeline {
             steps {
                 echo "Building Docker Image: ${DOCKER_IMAGE_NAME}..."
                 // คำสั่ง Docker Build: ใช้ Dockerfile ใน Root ของโปรเจกต์
-                sh "docker build -t ${DOCKER_IMAGE_NAME} ."
-                echo "Docker Image ${DOCKER_IMAGE_NAME} built successfully."
+                sh "docker build -t ${FULL_DOCKER_IMAGE_PATH} ."
+                echo "Docker Image ${FULL_DOCKER_IMAGE_PATH} built successfully."
             }
         }
 
@@ -74,6 +74,7 @@ pipeline {
             steps {
                 echo "Deploy app !!"
                 // ขั้นตอนที่ 5: Push to Registry
+                docker.image("${DOCKER_IMAGE_NAME}").tag("${NEXUS_REGISTRY}/${DOCKER_IMAGE_NAME}")
                 withCredentials([usernamePassword(credentialsId: 'nexus-registry', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
                     echo "Logging into Nexus Registry: ${NEXUS_REGISTRY}..."
                     sh "echo ${NEXUS_PASSWORD} | docker login -u ${NEXUS_USERNAME} --password-stdin ${NEXUS_REGISTRY}"
