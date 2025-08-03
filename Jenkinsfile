@@ -54,8 +54,8 @@ pipeline {
             steps {
                 echo "Building Docker Image: ${DOCKER_IMAGE_NAME}..."
                 // คำสั่ง Docker Build: ใช้ Dockerfile ใน Root ของโปรเจกต์
-                sh "docker build -t ${FULL_DOCKER_IMAGE_PATH} ."
-                echo "Docker Image ${FULL_DOCKER_IMAGE_PATH} built successfully."
+                sh "docker build -t ${DOCKER_IMAGE_NAME} ."
+                echo "Docker Image ${DOCKER_IMAGE_NAME} built successfully."
             }
         }
 
