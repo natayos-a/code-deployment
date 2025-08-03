@@ -74,7 +74,7 @@ pipeline {
             steps {
                 echo "Deploy app !!"
                 // ขั้นตอนที่ 5: Push to Registry
-                docker.image("${DOCKER_IMAGE_NAME}").tag("${NEXUS_REGISTRY}/${DOCKER_IMAGE_NAME}")
+                sh "docker tag ${APP_NAME} ${NEXUS_REGISTRY}/${DOCKER_IMAGE_NAME}"
                 withCredentials([usernamePassword(credentialsId: 'nexus-registry', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
                     echo "Logging into Nexus Registry: ${NEXUS_REGISTRY}..."
                     sh "echo ${NEXUS_PASSWORD} | docker login -u ${NEXUS_USERNAME} --password-stdin ${NEXUS_REGISTRY}"
