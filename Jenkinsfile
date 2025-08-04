@@ -49,8 +49,8 @@ pipeline {
 
         stage('Quality Gate Check') {
             steps {
-                timeout(time: 3, unit: 'MINUTES') { // กำหนด timeout เผื่อกรณี SonarQube ช้า
-                    waitForQualityGate abortPipeline: false
+                timeout(time: 7, unit: 'MINUTES') { // กำหนด timeout เผื่อกรณี SonarQube ช้า
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
@@ -94,9 +94,8 @@ pipeline {
             steps {
                 script {
                     echo "Updating GitOps repository with new image tag for automatic deployment..."
-                    // ใช้ Credentials ที่ตั้งค่าไว้ใน Jenkins สำหรับ GitOps Repository
                     withCredentials([usernamePassword(credentialsId: env.GITOPS_CREDENTIAL_ID, usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-                        // ตั้งค่า Git user สำหรับการ Commit
+
                         sh "git config --global user.email 'natayos.arunsuriyasak@stream.co.th'" 
                         sh "git config --global user.name 'natayos-a'"        
                         
@@ -104,21 +103,15 @@ pipeline {
                         def gitOpsRepoWithCreds = env.GITOPS_REPO_URL.replace("https://", "https://${GIT_USERNAME}:${GIT_PASSWORD}@")
                         sh "git clone ${gitOpsRepoWithCreds}"
                         
-                        // เข้าไปในโฟลเดอร์ของ GitOps Repository
                         dir(env.GITOPS_REPO_DIR_NAME) { 
-                            sh "git checkout main" // <-- ตรวจสอบ Branch ของ GitOps Repo ที่คุณต้องการอัปเดต
-                            
-                            // อัปเดต 'image.tag' ใน values.yaml ด้วย yq
-                            // ต้องมั่นใจว่า yq ติดตั้งอยู่ใน Jenkins container แล้ว (ใน Dockerfile)
-                            // และโครงสร้างใน values.yaml ของคุณคือ image: { tag: "..." }
+                            sh "git checkout main"
                             sh "yq e '.image.tag = \"${env.IMAGE_VERSION}\"' -i ${env.VALUES_YAML_PATH}"
-                            
                             echo "Updated ${env.VALUES_YAML_PATH} with new image tag: ${env.IMAGE_VERSION}"
 
                             // Commit และ Push การเปลี่ยนแปลงไปยัง GitOps Repository
                             sh "git add ${env.VALUES_YAML_PATH}"
                             sh "git commit -m 'CI: Update ${APP_NAME} image to ${env.IMAGE_VERSION}'"
-                            sh "git push origin main" // <-- ตรวจสอบ Branch ของ GitOps Repo ที่คุณต้องการ Push ไป
+                            sh "git push origin main"
                             echo "Changes pushed to GitOps repository. GitOps operator will now deploy."
                         }
                     }
@@ -126,8 +119,6 @@ pipeline {
             }
         }
 
-        // ใน GitOps Flow, Jenkins ไม่ได้ Deploy เองแล้ว
-        // Stage นี้จึงเป็นแค่การยืนยันว่าการ Deploy ถูกจัดการโดย GitOps Operator
         stage('Deployment Handover to GitOps') { 
             steps {
                 echo "Deployment of ${APP_NAME} version ${IMAGE_VERSION} is now handled by the GitOps Operator (e.g., Argo CD/Flux CD)."
