@@ -9,7 +9,7 @@ pipeline {
         APP_NAME = "my-app"
         IMAGE_VERSION = "${env.BUILD_NUMBER}"
         DOCKER_IMAGE_NAME = "${APP_NAME}:${IMAGE_VERSION}"
-        NEXUS_REGISTRY = "172.24.112.1:8081"
+        NEXUS_REGISTRY = "172.24.112.1:8082"
         NEXUS_DOCKER_REPO = "myapp-docker" // ตั้งชื่อตาม Repository ที่คุณสร้างใน Nexus
         FULL_DOCKER_IMAGE_PATH = "${NEXUS_REGISTRY}/${DOCKER_IMAGE_NAME}"
 
