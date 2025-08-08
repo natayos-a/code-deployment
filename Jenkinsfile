@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        APP_NAME = "my-app"
+        APP_NAME = "my-app-frontend"
         IMAGE_VERSION = "${env.BUILD_NUMBER}.0.0"
         DOCKER_IMAGE_NAME = "${APP_NAME}:v${IMAGE_VERSION}"
         NEXUS_REGISTRY = "172.24.112.1:8082"
@@ -78,7 +78,7 @@ pipeline {
         stage('Push Docker Image to Nexus Registry') {
             steps {
                 echo "Pushing Docker Image to Nexus Registry..."
-                sh "docker tag ${APP_NAME} ${NEXUS_REGISTRY}/${DOCKER_IMAGE_NAME}"
+                sh "docker tag ${DOCKER_IMAGE_NAME} ${NEXUS_REGISTRY}/${DOCKER_IMAGE_NAME}"
                 withCredentials([usernamePassword(credentialsId: 'nexus-registry', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
                     echo "Logging into Nexus Registry: ${NEXUS_REGISTRY}..."
                     sh "echo ${NEXUS_PASSWORD} | docker login -u ${NEXUS_USERNAME} --password-stdin ${NEXUS_REGISTRY}"
