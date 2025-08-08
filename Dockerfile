@@ -36,7 +36,7 @@ RUN apk add --no-cache nodejs npm
 RUN rm -rf /etc/nginx/conf.d/* /usr/share/nginx/html/*
 
 # Copy built app from previous stage
-COPY --from=frontend_builder /app/frontend/build /usr/share/nginx/html
+COPY --from=frontend_builder /app/build /usr/share/nginx/html
 
 # Copy custom nginx configuration (optional)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
@@ -47,8 +47,8 @@ COPY --from=backend_builder /app/backend /app/backend
 
 WORKDIR /app
 
-# Expose port 4200
-EXPOSE 4200
+# Expose port 80
+EXPOSE 80
 EXPOSE 3001
 
 # Health check
