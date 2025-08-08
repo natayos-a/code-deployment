@@ -1,62 +1,44 @@
-# Multi-stage build for React application
+# --- Stage 1: Build the Frontend application ---
+# ใช้ Node.js 20 เป็น base image เพื่อติดตั้ง dependencies และ build
+FROM node:20.19.4-alpine as builder
 
-# Stage 1: Build the React app
-FROM node:20.19.4-alpine as frontend_builder
-
+# ตั้งค่า working directory ภายใน container
 WORKDIR /app
 
-# Copy package.json and package-lock.json
+# คัดลอก package.json และ package-lock.json ก่อนเพื่อใช้ Docker cache
+# (ถ้า frontend เป็น React จะเป็น package.json และ folder src)
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --silent
-
-# Copy source code
-COPY . .
-
-# Build the app for production
-RUN npm run build
-
-FROM node:20.19.4-alpine as backend_builder
-
-WORKDIR /app/backend
-
-COPY backend/package*.json ./
-
+# ติดตั้ง dependencies ของ Frontend
 RUN npm install
 
-COPY backend/ .
+# คัดลอก source code ทั้งหมดของ Frontend
+COPY . .
 
-# Stage 2: Serve the app with Nginx
-FROM nginx:alpine as final_image
+# สั่ง build Frontend application
+# หากเป็น React จะใช้ npm run build
+# หากเป็น Angular จะใช้ ng build --prod
+RUN npm run build
 
-RUN apk add --no-cache nodejs npm
 
-# Remove default nginx website
+# --- Stage 2: Serve the built Frontend with Nginx ---
+# ใช้ Nginx Alpine เป็น base image ซึ่งมีขนาดเล็กและเหมาะสำหรับ production
+FROM nginx:alpine
+
+# ลบไฟล์ default ของ Nginx ออกก่อนเพื่อไม่ให้เกิดความสับสน
 RUN rm -rf /etc/nginx/conf.d/* /usr/share/nginx/html/*
 
-# Copy built app from previous stage
-COPY --from=frontend_builder /app/build /usr/share/nginx/html
+# คัดลอกไฟล์ที่ build แล้วจาก Stage 'builder' ไปยัง Nginx's web root
+# หากเป็น React ไฟล์จะอยู่ใน /app/build
+# หากเป็น Angular ไฟล์จะอยู่ใน /app/dist/<ชื่อโปรเจกต์>
+COPY --from=builder /app/build /usr/share/nginx/html
 
-# Copy custom nginx configuration (optional)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# คัดลอก Nginx configuration สำหรับ Single Page Application (SPA)
+# หากคุณใช้ React Router หรือ Angular Router จะต้องมีไฟล์นี้
+COPY nginx.conf /etc/nginx/nginx.conf
 
-RUN mkdir -p /app/backend
-
-COPY --from=backend_builder /app/backend /app/backend
-
-WORKDIR /app
-
-# Expose port 80
+# เปิด Port 80 ซึ่งเป็น Port มาตรฐานของ HTTP
 EXPOSE 80
-EXPOSE 3001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost/ || exit 1
-
-COPY start.sh /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
-
-# Start nginx
-CMD ["start.sh"]
+# สั่งให้ Nginx ทำงาน
+CMD ["nginx", "-g", "daemon off;"]
