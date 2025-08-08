@@ -9,6 +9,6 @@ app.get('/api/data', (req, res) => {
   res.json({ message: 'Hello from Node!' });
 });
 
-app.listen(8000, () => {
-  console.log('Server running on port 8000');
+app.listen(3001, () => {
+  console.log('Server running on port 3001');
 });
