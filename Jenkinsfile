@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         APP_NAME = "my-app"
-        IMAGE_VERSION = "${env.BUILD_NUMBER}"
+        IMAGE_VERSION = "${env.BUILD_NUMBER}.0.0"
         DOCKER_IMAGE_NAME = "${APP_NAME}:${IMAGE_VERSION}"
         NEXUS_REGISTRY = "172.24.112.1:8082"
         NEXUS_DOCKER_REPO = "myapp-docker" // ตั้งชื่อตาม Repository ที่คุณสร้างใน Nexus
