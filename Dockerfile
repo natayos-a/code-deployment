@@ -1,9 +1,9 @@
 # Multi-stage build for React application
 
 # Stage 1: Build the React app
-FROM node:18-alpine as build
+FROM node:20.19.4-alpine as frontend_builder
 
-WORKDIR /code-deployment
+WORKDIR /app
 
 # Copy package.json and package-lock.json
 COPY package*.json ./
@@ -17,9 +17,9 @@ COPY . .
 # Build the app for production
 RUN npm run build
 
-FROM node:18-alpine as back
+FROM node:20.19.4-alpine as backend_builder
 
-WORKDIR /code-deployment/backend
+WORKDIR /app/backend
 
 COPY backend/package*.json ./
 
@@ -28,22 +28,24 @@ RUN npm install
 COPY backend/ .
 
 # Stage 2: Serve the app with Nginx
-FROM nginx:alpine
+FROM nginx:alpine as final_image
+
+RUN apk add --no-cache nodejs npm
 
 # Remove default nginx website
-RUN rm -rf /usr/share/nginx/html/*
+RUN rm -rf /etc/nginx/conf.d/* /usr/share/nginx/html/*
 
 # Copy built app from previous stage
-COPY --from=build /app/build /usr/share/nginx/html
+COPY --from=frontend_builder /app/frontend/build /usr/share/nginx/html
 
 # Copy custom nginx configuration (optional)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-RUN mkdir -p /code-deployment/backend
+RUN mkdir -p /app/backend
 
-COPY --from=back /code-deployment/backend /code-deployment/backend
+COPY --from=backend_builder /app/backend /app/backend
 
-WORKDIR /code-deployment
+WORKDIR /app
 
 # Expose port 4200
 EXPOSE 4200
